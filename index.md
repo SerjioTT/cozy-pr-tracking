@@ -90,26 +90,6 @@
 
 `[предположение]` Причина связана с открытыми issue по backup round-trip. Проверить можно так: посмотреть, падают ли те же сьюты на свежем прогоне из ветки основного репозитория, не из форка.
 
-## Что нужно для мержа в main
-
-Требования складываются из двух слоёв. Оба читаются без админ-прав: ruleset — через `gh api repos/cozystack/cozystack/rules/branches/main`, классическая защита — через поле `protection` у ветки.
-
-**Ruleset «Require PR review for default branches»:**
-
-- **одного апрува достаточно** — `required_approving_review_count: 1`
-- **новый пуш снимает уже выданные апрувы** — `dismiss_stale_reviews_on_push: true`. Запросы изменений пуш не снимает: их снимает только сам ревьюер или dismiss мейнтейнера
-
-**Классическая защита ветки:**
-
-- **обязательные проверки `pre-commit` и `E2E Tests`**
-- апрув владельца кода из CODEOWNERS. `[вывод]` Сама эта настройка без админ-прав не читается, но 17.09 раскладка апрувов scooby87 совпала с зонами CODEOWNERS без единого исключения
-
-То же правило «один апрув, пуш снимает апрувы» действует в `cozystack/website` и `cozystack/community`.
-
-### Как читать «1 approved, 6 pending»
-
-«Pending» — это **не недостающие апрувы**, а запросы на ревью, которые GitHub сам разослал всем владельцам кода изменённых путей. Их ответ не требуется: одного апрува владельца кода достаточно, и итоговый вердикт `APPROVED` это подтверждает.
-
 ### Зоны CODEOWNERS
 
 Для файла действует последнее совпавшее правило. Пример на scooby87 — именно на нём 17.09 было видно, как работает требование:
@@ -125,12 +105,6 @@
 
 Основная пятёрка — kvaps, lllamnyp, lexfrei, myasnikovdaniil, IvanHunters — владеет всем. Для `packages/system/` также sircthulhu и mattia-eleuteri. У `types.go`, `zz_generated.deepcopy.go` и `cozyrds/` владельцы не указаны вовсе — это снятие владения со сгенерированных файлов.
 
-### CI для PR из форков
-
-Обязательные проверки на PR из форка стартуют только после «Approve and run workflows» от мейнтейнера. `[вывод]` Одобрение действует на конкретный прогон: после пушей 17.09 новые коммиты #3799, #4135, #4136, #3937, #3936 снова стоят в `action_required`.
-
-Сборка идёт в два этапа. Сначала workflow «Pull Request» собирает образы кодом форка без доступа к секретам и складывает их в артефакты. Затем `e2e-fork.yaml` запускается из main проекта, публикует артефакты в registry по списку из базового дерева и гоняет E2E в одноразовой песочнице уже без токена. Поэтому PR, добавляющий **новый** образ, как #4291, из форка полностью не проверить.
-
 ### Что держит мерж сейчас
 
 | Что держит | PR |
@@ -144,38 +118,6 @@
 | тестовый файл, сборка образа | #4291 |
 | неснятый запрос изменений и E2E | #3800, #3956 |
 | конфликт, правки и E2E | #4171 |
-
-## DCO — закрыто
-
-10.09 yankawai переподписал все коммиты, с тех пор проверка зелёная на всех PR.
-
-Строка `Signed-off-by` в сообщении коммита удостоверяет право автора отдать код проекту под его лицензией. CNCF требует её вместо отдельного договора, бот `probot/dco` проверяет **каждый** коммит в PR, а не только последний.
-
-Причина тогдашней поломки определялась по дате: всё, что закоммичено по 30.08, было подписано, всё с 01.09 — нет, без исключений в обе стороны. `[предположение]` Около 31.08 изменилось окружение — новый клон, переустановка или потерянный хук.
-
-Чтобы не повторялось, в клон ставится хук `.git/hooks/prepare-commit-msg`:
-
-```sh
-#!/bin/sh
-git interpret-trailers --if-exists doNothing \
-  --trailer "Signed-off-by: $(git config user.name) <$(git config user.email)>" \
-  --in-place "$1"
-```
-
-Класть в конкретный клон, **не глобально через `core.hooksPath`**: глобальная настройка подменяет `.git/hooks` во всех репозиториях, и `pre-commit` в cozystack после этого отказывается устанавливаться.
-
-## Подписки на уведомления
-
-Проверяются и меняются только через GraphQL — поле `viewerSubscription` и мутация `updateSubscription`. Репозиторий целиком не отслеживается сознательно, подписки ставятся точечно.
-
-| Есть подписка | Нет подписки |
-|---|---|
-| #4292, #4184, #4171, #4148, #4136, #4135, #4134, #4100, #4014, #3937, #3936, #3935, #3800, #3799, community#25, issue #3950, issue #3022 | #4291, #4254, #4253, #3956 |
-
-```bash
-ID=$(gh api graphql -f query='query{repository(owner:"cozystack",name:"cozystack"){pullRequest(number:4291){id}}}' --jq '.data.repository.pullRequest.id')
-gh api graphql -f query="mutation{updateSubscription(input:{subscribableId:\"$ID\",state:SUBSCRIBED}){subscribable{...on PullRequest{number viewerSubscription}}}}"
-```
 
 ## Связь PR и issue
 
@@ -254,15 +196,6 @@ gh api graphql -f query="mutation{updateSubscription(input:{subscribableId:\"$ID
 | [#4007](https://github.com/cozystack/cozystack/pull/4007) | myasnikovdaniil | Удаление ghcr.io pull-through mirror из e2e | Закрыт 09.09 как пустой: #4020 уже всё удалил |
 | [#3949](https://github.com/cozystack/cozystack/pull/3949) | IvanHunters | Поля `talos.*` необязательными в схеме | Закрыт 24.08 |
 | [#2751](https://github.com/cozystack/cozystack/pull/2751) | SerjioTT | SMTP для Grafana | Закрыт 13.08 stale-ботом, осознанно: #3800 решает задачу на правильном слое |
-
-## Как обновить состояния
-
-```bash
-printf 'query { repository(owner:"cozystack", name:"cozystack") {\n' > /tmp/q.graphql
-for n in 4292 4291 4254 4253 4184 4171 4148 4136 4135 4134 4100 4014 3956 3937 3936 3935 3800 3799; do printf '  p%s: pullRequest(number:%s){ number state reviewDecision mergeStateStatus updatedAt }\n' "$n" "$n" >> /tmp/q.graphql; done
-printf '} }\n' >> /tmp/q.graphql
-gh api graphql -F query=@/tmp/q.graphql --jq '.data.repository | to_entries[] | .value | "#\(.number) \(.state) \(.reviewDecision // "—") \(.mergeStateStatus) upd=\(.updatedAt[0:10])"'
-```
 
 ## Смержено в main
 
