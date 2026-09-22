@@ -1,17 +1,16 @@
 # Отслеживание PR в cozystack
 
-Обновлено: **2026-09-19**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
+Обновлено: **2026-09-22**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
 
 На GitHub у issue и PR **общая нумерация**, по номеру их не отличить. Поэтому здесь issue всегда помечены словом — `issue #4083`, а голый `#4133` означает PR.
 
-## Главное за вечер 18.09
+## Главное за 19–22.09
 
-- **lexfrei смержил ещё семь наших PR**: #4253 и #4136 (13:29), #4014 (15:36), #3935 (17:29), #4100 (17:50), #3937 (18:16), #4291 (18:23). Вместе с утренними — **13 наших PR в main за один день**. Issue #4086 закрыт мержем #4136 — вся четвёрка issue #4083–#4086 закрыта
-- Перед мержем lexfrei **переодобрил** #4014 (после тестов), #3937 (после ребейза) и #4291 (после объявления `EXIT`-трапов). #4291 смержен **с красным E2E** — PR с новым образом из форка до конца и не проверить
-- **Перезапуски E2E позеленели и на opensearch**: #4100 и #3935 смержены с зелёным E2E. `[вывод]` Вчерашнее устойчивое падение opensearch тоже было нестабильностью стенда, а не регрессией
-- **Вся четвёрка живой миграции VM в main**: #4254, website#697, #4253, #4291
-- **Из наших открытых осталось три PR**: #3936, #3800, #3799. Вечером yankawai запушил в #3800 и #3936 правки по оставшимся замечаниям IvanHunters — CI на новых коммитах снова в `action_required`
-- **#3799 прошёл CI после ребейза**: `pre-commit` и `E2E Tests` зелёные. Единственный блокер — неснятый запрос scooby87, его замечание про трейлер исправлено ещё 17.09
+- **По открытым PR движения нет**: #3800 и #3936 ждут запуска CI (`action_required`) и повторного ревью IvanHunters, #3799 — только снятия запроса scooby87 (CI зелёный), #3956 и #4171 — без изменений, community#25 — тишина с 03.09
+- **Правки #3936 проверены по коду 20.09**: все три пункта ревью IvanHunters закрыты — README-таблица заменена общими абзацами как в nats, описание пресета исправлено и закреплено тестом на частичные `resources`, а MAJOR про release note закрыт правкой тела PR: популяция брокеров, которая останется на `t1.nano` после read-modify-write, описана вместе с командой обнаружения
+- **Новый участник ghostrider0470**: 18.09 разом завёл четыре issue из реальной эксплуатации (bare metal, один узел). Главный для нас — issue #4342: механизм «дефолты применяются только на чтении», вскрытый IvanHunters в ревью #3936, обобщён до платформенного бага с репродукцией — первая запись любого рода, даже патч аннотации, запекает дефолты в values, и Flux делает незапрошенный upgrade. 19.09 yankawai привязал его к #3936
+- **Взяли в трекинг #2321 и issue #1966**: tcp-balancer с февраля не стартует на свежей установке — `haproxy:latest` съехал на HAProxy 3.3+, где одинаковые имена frontend/backend фатальны. Фикс #2321 застрял на авторе с 01.07
+- Напоминание контекста: 18.09 lexfrei смержил **13 наших PR за один день**, включая всю связку живой миграции VM — детали в таблице «Смержено в main»
 
 ## Требует действия
 
@@ -23,6 +22,7 @@
 | **Снять устаревший запрос изменений** | #3956 — IvanHunters с 01.09 | Повторный проход или dismiss. lexfrei одобрил 11.09 |
 | **Закрыть issue** | issue #3022, issue #3793 | Мейнтейнер: #3022 по словам автора #4026 решён мержем #4152 и #2682. #3793 упомянут в описании смерженного #3938, но без `Fixes`. `[вывод]` Скорее всего #3938 его и закрывает — стоит проверить и закрыть |
 | **Разрешить конфликт** | #4171 | myasnikovdaniil: конфликт с main и запрос изменений lexfrei от 09.09, без движения с 10.09 |
+| **Оживить фикс tcp-balancer** | #2321 | officialasishkumar: закрыть замечание lexfrei про `whitelistHTTP` без `whitelist`, добавить helm-unittest сьют, починить DCO — без движения с 01.07. Для мейнтейнеров: lexfrei в ревью писал, что пин образа взял бы и отдельно |
 
 **В одобренные PR ничего не пушить** — новый коммит снимет апрув (`dismiss_stale_reviews_on_push: true`).
 
@@ -30,7 +30,7 @@
 
 | PR | Автор | Название | Что решает | Состояние |
 |---|---|---|---|---|
-| [#3936](https://github.com/cozystack/cozystack/pull/3936) | yankawai | fix(rabbitmq): right-size the default resources preset to s1.nano | На дефолтном пресете `t1.nano` брокер получал OOMKill, набирал 10 рестартов и не становился Ready. Пресет поднят до `s1.nano` | **CHANGES_REQUESTED** — IvanHunters 18.09: 2 MAJOR — release note обещает новый дефолт и тем инстансам, у которых `resourcesPreset` уже сохранён в спеке, а README документирует дефолт, отсутствующий в его же таблице пресетов — и 1 MINOR про частично заданные `resources`. **Вечером 18.09 запушены правки**: описание пресета теперь говорит, что он дозаполняет незаданное в `resources`, а раздел пресетов в README указывает на общую матрицу размеров. `[вывод]` По заголовкам коммитов закрыты MAJOR про README и MINOR; закрыт ли MAJOR про release note — по заголовкам не видно. Ждёт повторного ревью и запуска CI |
+| [#3936](https://github.com/cozystack/cozystack/pull/3936) | yankawai | fix(rabbitmq): right-size the default resources preset to s1.nano | На дефолтном пресете `t1.nano` брокер получал OOMKill, набирал 10 рестартов и не становился Ready. Пресет поднят до `s1.nano` | **CHANGES_REQUESTED** — IvanHunters 18.09: 2 MAJOR — release note обещает новый дефолт и тем инстансам, у которых `resourcesPreset` уже сохранён в спеке, а README документирует дефолт, отсутствующий в его же таблице пресетов — и 1 MINOR про частично заданные `resources`. **Вечером 18.09 запушены правки, 20.09 проверены по коду — закрыты все три пункта**: README-таблица заменена двумя общими абзацами (дословно как в nats) со ссылкой на матрицу размеров, описание пресета говорит «дозаполняет всё, что `resources` не задал» и закреплено тестом с одним `resources.cpu`, а release note в теле PR описывает популяцию брокеров, которая останется на `t1.nano` после read-modify-write, с командой обнаружения. Механизм подтверждён и платформенным issue #4342. Открыт вопрос автора к мейнтейнерам: раскатить ли ту же формулировку на шестнадцать остальных чартов. Ждёт повторного ревью IvanHunters и запуска CI |
 | [#3800](https://github.com/cozystack/cozystack/pull/3800) | yankawai | feat(monitoring): add optional email receiver to alertmanager | Почтовый канал алертинга через Alertmanager рядом с Alerta, пароль SMTP монтируется из Secret. Реализовано наше предложение: список `alertnames` и настраиваемые `severities` | **CHANGES_REQUESTED** — IvanHunters 18.09: 2 MAJOR — `smarthost` не валидируется; связка `spec.secrets` и свободного `smarthost` превращает Monitoring CR в примитив чтения Secret, недоступных автору CR по RBAC — плюс 3 MINOR. Днём 18.09 запушены правки по обоим MAJOR (пароль SMTP из фиксированного Secret, валидация `smarthost`, наследование корневого `group_by`), **вечером — второй пакет**: валидация адресов to/from, тесты на каждый терм guard'а частичной конфигурации, в docs закреплено, что SMTP-кред принадлежит одному тенанту. `[вывод]` По заголовкам коммитов закрыты оба MAJOR и все три MINOR. Ждёт повторного ревью IvanHunters и запуска CI |
 | [#3799](https://github.com/cozystack/cozystack/pull/3799) | yankawai | fix(linstor): use severity warning instead of warn in prometheus rules | Семь алертов LINSTOR/DRBD с `severity: warn` Alerta отбрасывала с ошибкой 500, и они молча терялись | **CHANGES_REQUESTED** — висит запрос scooby87 от 17.09: единственным блокером был трейлер коммита, исправлено 17.09 (`Assisted-by: LLM`). Ребейз 18.09, **CI прошёл: `pre-commit` и `E2E Tests` зелёные**. Заодно keda-алерт переведён с `severity: info` на `informational`, severity закреплены тестом-контрактом по helm-шаблонам, включая template rules. Остался только неснятый запрос |
 
@@ -40,6 +40,7 @@
 |---|---|---|---|---|
 | [#4171](https://github.com/cozystack/cozystack/pull/4171) | myasnikovdaniil | feat(kubernetes): boot tenant worker disks from a shared golden Talos image (CDI clone) | Воркеры тенантных кластеров грузятся клоном общего golden-образа Talos вместо того, чтобы каждый тянуть ~4 GiB по HTTP. Каталог настраивается платформенным ключом `kubernetesWorkerImage` | **CHANGES_REQUESTED** — lexfrei 09.09. **Конфликтует с main**, E2E красный. Без движения с 10.09. Дефолтом clone не становится, выбор per-pool через `osImage.builtin` |
 | [#3956](https://github.com/cozystack/cozystack/pull/3956) | myasnikovdaniil | fix(api): repair an empty required field instead of failing the release | Пустое обязательное поле в спеке роняло установку всего релиза | **CHANGES_REQUESTED** — висит запрос IvanHunters от 01.09, lexfrei одобрил 11.09. E2E красный (прогон от 10.09). Важен как шов на write-пути для create-time дефолтинга из issue #3950 |
+| [#2321](https://github.com/cozystack/cozystack/pull/2321) | officialasishkumar | [tcp-balancer] Fix HAProxy 3.3 startup regression | `haproxy:latest` стал резолвиться в 3.3+, где одинаковые имена frontend/backend — фатальная ошибка конфига: свежая установка tcp-balancer вообще не стартует (`Fixes issue #1966`). PR переименовывает бэкенды и пинит образ на `appVersion` чарта (сейчас 3.4.1, LTS) | **CHANGES_REQUESTED** — lexfrei 29.07, второй круг: первый блокер (незадекларированный ACL `whitelist` валил старт и без 3.3) исправлен, но правка породила новый — `whitelistHTTP: true` при пустом `whitelist` теперь молча рендерит frontend без единого ACL: явный security-опт-ин превращается в no-op вместо громкого падения. Также запрошен helm-unittest сьют (у чарта нет `tests/`) и **красный DCO** — head-коммит без `Signed-off-by`. Автор без движения с 01.07; в issue двое пользователей спрашивают о мерже. Открыт с 02.04, конфликтов с main нет |
 
 ## Живая миграция VM — вся связка в main
 
@@ -88,6 +89,7 @@
 | повторное ревью IvanHunters и запуск CI после правок | #3800, #3936 |
 | неснятый запрос изменений и E2E | #3956 |
 | конфликт, правки и E2E | #4171 |
+| правки автора (no-op вместо ACL), тесты и DCO — автор молчит с 01.07 | #2321 |
 
 ## Связь PR и issue
 
@@ -108,6 +110,8 @@
 | [#3022](https://github.com/cozystack/cozystack/issues/3022) | lexfrei | OpenSearch fails to start in tenant namespaces: privileged init-sysctl violates baseline PodSecurity | OPEN, но **по сути решён**: #4152 поднимает `vm.max_map_count` DaemonSet'ом, #2682 выключил `setVMMaxMapCount`. Автор #4026 предложил закрыть |
 | [#4073](https://github.com/cozystack/cozystack/issues/4073) | lexfrei | opensearch-operator: dnsBase stays cluster.local | **закрыт** 17.09 — фикс в #4185 |
 | [#3793](https://github.com/cozystack/cozystack/issues/3793) | IvanHunters | Deleting a tenant with a Kafka app hangs the namespace in Terminating (KafkaTopic strimzi.io/topic-operator finalizer) | OPEN. Смерженный 15.09 #3938 на него ссылается в описании, но без `Fixes`, поэтому issue не закрылся автоматически |
+| [#1966](https://github.com/cozystack/cozystack/issues/1966) | lllamnyp | tcp-balancer: HAProxy 3.3 breaks due to frontend/backend name collision | OPEN с 03.02, `priority/important-soon` — и при этом `lifecycle/stale`. Баг жив на main (проверено 22.09): в configmap четыре пары frontend/backend с одинаковыми именами, образ — `haproxy:latest`, values'ами не переопределяется. Фикс — #2321, застрял на авторе |
+| [#4342](https://github.com/cozystack/cozystack/issues/4342) | ghostrider0470 | cozystack-api: spec defaults are applied when an Application is read but not when it is created, so its first update upgrades the Helm release | OPEN с 18.09, `triage/needs-triage`. Обобщение механизма из ревью #3936 до платформенного бага, с репродукцией на VMDisk: дефолты подставляются на чтении, `Update` начинается с чтения — первая запись любого рода запекает дефолты в `spec.values`, Flux делает незапрошенный upgrade, а смена дефолта чарта до тронутых приложений уже не доезжает. Ссылается на #3936 и #3956; для VMInstance такой upgrade ещё и виснет — его комментарий в issue #3734 называет причину: `lookup` kube-ovn IP в шаблоне vm.yaml |
 
 ## LINSTOR
 
