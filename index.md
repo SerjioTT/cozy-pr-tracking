@@ -10,6 +10,7 @@
 - **#4171 смержен 24.09**: golden Talos image в main. lexfrei одобрил 23.09 после ребейза со сквошем, автор смержил сам
 - **#3800 прошёл три круга ревью за два дня** (22–23.09) — IvanHunters один и lexfrei два, каждый закрыт правками в тот же день; финальный блокер (IPv6-литералы, расходящиеся между версиями Go) снят отказом от них. PR сквошнут в один коммит, ждёт запуска CI и повторного ревью — детали в строке PR
 - **issue #3793 и issue #4262 закрыты 23.09** lexfrei — issue #3793 ровно так, как мы просили: fixed by #3938 (плюс #4280 для кредов хука; бэкпорт в release-1.6 — #4421)
+- **issue #3950 принят в работу**: 23.09 lexfrei поставил `triage/accepted` и `priority/important-longterm`. Мерж #4171 закрыл каталожную сторону, платформенные дефолты для полей `KubernetesNodes` остаются открытыми — подробности в «Issues»
 - **Наших открытых осталось два**: #3800 и #3799. По #3799 движения нет — CI зелёный, держит только неснятый запрос scooby87 от 17.09
 
 ## Требует действия
@@ -102,7 +103,7 @@
 
 | Issue | Автор | Название | Состояние |
 |---|---|---|---|
-| [#3950](https://github.com/cozystack/cozystack/issues/3950) | IvanHunters | Platform-wide defaults for tenant Talos worker settings | OPEN, `triage/needs-triage`. Наш комментарий 07.09 о create-time дефолтинге, развёрнутый ответ myasnikovdaniil 08.09. Дальше без движения |
+| [#3950](https://github.com/cozystack/cozystack/issues/3950) | IvanHunters | Platform-wide defaults for tenant Talos worker settings | OPEN, **23.09 lexfrei принял в работу**: `triage/accepted` и `priority/important-longterm` вместо `triage/needs-triage`. Смерженный 24.09 #4171 закрыл каталожную сторону — платформенный ключ `kubernetesWorkerImage` позволяет направить импорт golden-образа в зеркало, — но потребляющая сторона дефолтов (`imageFactoryURL`, `installerRepository`, `registryMirrors` на `KubernetesNodes`) осталась. В треде готовый разбор: наш комментарий 07.09 о create-time дефолтинге, ответ myasnikovdaniil 08.09 (двум полям платформенный дефолт безопасен, `imageFactoryURL` — прокат флота), предупреждение lexfrei 01.09 о невозможности plain default chain в Helm. Шов на write-пути — #3956 |
 | [#3022](https://github.com/cozystack/cozystack/issues/3022) | lexfrei | OpenSearch fails to start in tenant namespaces: privileged init-sysctl violates baseline PodSecurity | OPEN, но **по сути решён**: #4152 поднимает `vm.max_map_count` DaemonSet'ом, #2682 выключил `setVMMaxMapCount`. Автор #4026 предложил закрыть |
 | [#4073](https://github.com/cozystack/cozystack/issues/4073) | lexfrei | opensearch-operator: dnsBase stays cluster.local | **закрыт** 17.09 — фикс в #4185 |
 | [#3793](https://github.com/cozystack/cozystack/issues/3793) | IvanHunters | Deleting a tenant with a Kafka app hangs the namespace in Terminating (KafkaTopic strimzi.io/topic-operator finalizer) | **закрыт** 23.09 lexfrei — как мы и просили: fixed by #3938, плюс #4280 для кредов хука; бэкпорт в release-1.6 — #4421 |
