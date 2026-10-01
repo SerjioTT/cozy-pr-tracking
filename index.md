@@ -1,11 +1,12 @@
 # Отслеживание PR в cozystack
 
-Обновлено: **2026-09-30**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
+Обновлено: **2026-10-01**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
 
 На GitHub у issue и PR **общая нумерация**, по номеру их не отличить. Поэтому здесь issue всегда помечены словом — `issue #4083`, а голый `#4133` означает PR.
 
-## Главное за 28–30.09
+## Главное за 28.09–01.10
 
+- **#4610 смержен 30.09 за четыре часа** — апрув lexfrei через 50 минут после открытия, E2E зелёный. Новый PR Яна: удаление Application с `--cascade=foreground` зависало навсегда — у Application и его HelmRelease общий UID, GC финализировал узел через Application-эндпоинт, который не отдавал finalizers. Ян поймал это на v1.6.4 с Bucket и OpenBAO. Родственник issue #4342 — та же пара объектов с общим UID
 - **#2321 закрыт 29.09** lexfrei как заменённый — «This is fixed on main by #4366 … Closing as superseded, thanks for the work on it». Ровно то, что мы предлагали в «Требует действия»; авторство officialasishkumar сохранено в теле #4366
 - **По #3800 и #3799 движения нет пятый день**: ветки, перебранные вечером 25.09 по замечаниям lexfrei, так и стоят без запуска CI. «Approve and run workflows» — единственное, что отделяет оба PR от финального ревью: содержательных блокеров не осталось
 - **Запрос IvanHunters на #3956 висит ровно месяц** (с 01.09), при том что lexfrei одобрил 11.09, а issue #3950, для которого этот PR — шов, 23.09 принят с `priority/important-longterm`
@@ -176,6 +177,7 @@ PR из отслеживаемого скоупа, которые уже в `mai
 
 | PR | Автор | Что решил | Смержен | Релиз |
 |---|---|---|---|---|
+| [#4610](https://github.com/cozystack/cozystack/pull/4610) | yankawai | cozystack-api: сборщик мусора может финализировать Application — удаление с `--cascade=foreground` или orphan-пропагацией больше не зависает навсегда. Application теперь отдаёт `foregroundDeletion`/`orphan` в `metadata.finalizers` и проносит их изменения до HelmRelease; у пары общий UID, и GC финализировал узел через Application-эндпоинт, который finalizers не показывал. Найдено на v1.6.4 с Bucket и OpenBAO | 30.09 | пока только main |
 | [#4366](https://github.com/cozystack/cozystack/pull/4366) | yankawai | tcp-balancer: бэкенды переименованы (rename взят из #2321, автор указан), образ запинен на `haproxy:3.4.4` LTS вместо `latest`, whitelist-guard, helm-unittest сьюты. Свежая установка снова стартует. Закрыл issue #1966, висевший с 03.02 | 25.09 | пока только main |
 | [#4171](https://github.com/cozystack/cozystack/pull/4171) | myasnikovdaniil | kubernetes: воркеры тенантных кластеров грузятся CDI-клоном общего golden-образа Talos вместо ~4 GiB по HTTP на каждого; выбор per-pool через `osImage.builtin` | 24.09 | пока только main |
 | [#3936](https://github.com/cozystack/cozystack/pull/3936) | yankawai | rabbitmq: дефолтный пресет поднят с `t1.nano` до `s1.nano` — брокер на дефолтах больше не получает OOMKill. Популяция, остающаяся на `t1.nano` после read-modify-write, описана в release note (см. issue #4342) | 22.09 | v1.6.4 — бэкпорт #4393 |
