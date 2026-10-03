@@ -1,11 +1,12 @@
 # Отслеживание PR в cozystack
 
-Обновлено: **2026-10-01**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
+Обновлено: **2026-10-03**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
 
 На GitHub у issue и PR **общая нумерация**, по номеру их не отличить. Поэтому здесь issue всегда помечены словом — `issue #4083`, а голый `#4133` означает PR.
 
-## Главное за 28.09–01.10
+## Главное за 28.09–03.10
 
+- **01–02.10 Ян открыл четыре новых PR**: #4675 (NATS: JetStream для сгенерированного аккаунта), #4682 (draft — JSON-редактор free-form полей в формах дашборда, `Fixes issue #4676`), #4724 (PostgreSQL: дефолтные 128MB `shared_buffers` не влезают в маленькие пресеты — OOMKill при дампе) и #4725 — бэкпорт #4724 в release-1.6, поданный сразу. Ни на одном пока нет ни ревью, ни запуска CI
 - **#4612 смержен 30.09, через 12 минут после #4610** — тем же lexfrei, E2E зелёный: в консоли появилась вкладка ConfigMaps, и строка подключения FoundationDB теперь видна тенанту в дашборде. #4148 дал тенанту RBAC, но у консоли не было представления для ConfigMap — Ян завёл issue #4611 и закрыл его PR'ом в тот же день
 - **#4610 смержен 30.09 за четыре часа** — апрув lexfrei через 50 минут после открытия, E2E зелёный. Новый PR Яна: удаление Application с `--cascade=foreground` зависало навсегда — у Application и его HelmRelease общий UID, GC финализировал узел через Application-эндпоинт, который не отдавал finalizers. Ян поймал это на v1.6.4 с Bucket и OpenBAO. Родственник issue #4342 — та же пара объектов с общим UID
 - **#2321 закрыт 29.09** lexfrei как заменённый — «This is fixed on main by #4366 … Closing as superseded, thanks for the work on it». Ровно то, что мы предлагали в «Требует действия»; авторство officialasishkumar сохранено в теле #4366
@@ -20,6 +21,7 @@
 
 | Что | Где | Кому и что делать |
 |---|---|---|
+| **Первое ревью и запуск CI** | #4675, #4724, #4725 | Мейнтейнер: три свежих PR от 01–02.10 без единого ревью, обязательные проверки не запускались. #4682 пока draft — не торопить |
 | **Запустить CI** | #3800, #3799 | Любой мейнтейнер: «Approve and run workflows» на ветки, перебранные 25.09 — #3800 стоит в `action_required` пятый день, на голове #3799 прогонов нет вовсе. Это единственное, что мешает финальному ревью |
 | **Финальное ревью** | #3800 — lexfrei | Его блокер от 25.09 был только про историю коммитов, код признан готовым в том же ревью; история перебрана в тот же вечер. IvanHunters уже дал LGTM |
 | **Финальное ревью и снятие запроса** | #3799 — lexfrei и scooby87 | Блокер lexfrei (история) закрыт сквошем 25.09; запрос scooby87 висит с 17.09, его блокер (трейлер) исправлен в тот же день |
@@ -33,6 +35,9 @@
 
 | PR | Автор | Название | Что решает | Состояние |
 |---|---|---|---|---|
+| [#4724](https://github.com/cozystack/cozystack/pull/4724) | yankawai | fix(postgres): cap the default shared_buffers at a quarter of the memory limit | Чарт не задаёт `shared_buffers`, и CNPG не задаёт — PostgreSQL стартует со встроенными 128MB: на `t1.nano` это весь лимит памяти, на дефолтном `t1.micro` — половина. Дамп, большой скан или догоняющая реплика заполняют пул — инстанс получает OOMKill; наблюдали на кластере 1.6 с трёхинстансной базой на `t1.nano`. Ниже лимита 512Mi чарт теперь ставит четверть лимита (минимум 16MB), от 512Mi ничего не рендерится, явный `shared_buffers` в `postgresql.parameters` побеждает | **Открыт 02.10**, ревью нет, CI не запускался. **Бэкпорт в release-1.6 подан сразу — #4725**, cherry-pick без изменений, тоже ждёт ревью |
+| [#4682](https://github.com/cozystack/cozystack/pull/4682) | yankawai | fix(dashboard): allow editing free-form objects in application forms | В Form-режиме консоли у free-form полей вроде NATS `config.merge` и `config.resolver` нет редактора. PR добавляет JSON-редактор: вложенные объекты и массивы сохраняются, невалидный ввод остаётся видимым, схемная валидация блокирует create/update; типизированные map-поля сохраняют свой key/value-редактор. `Fixes issue #4676` | **Draft** — в описании ещё не приложены скриншоты. По словам автора: 26 новых тестов и все 457 тестов консоли зелёные, TypeScript и Vite-сборка проходят. Ревью нет, CI не запускался |
+| [#4675](https://github.com/cozystack/cozystack/pull/4675) | yankawai | fix(nats): enable JetStream for the generated account | При заданных `users` и `jetstream.enabled: true` серверный JetStream включён, а сгенерированный аккаунт `A` — нет: аутентификация и обычный messaging работают, но `$JS.API.INFO` возвращает 10039 «JetStream not enabled for account». Теперь аккаунт получает JetStream, когда он включён и нет явной настройки на уровне аккаунта; лимиты тенанта, явное выключение и merge-поведение сохраняются | **Открыт 01.10**, ревью нет, CI не запускался. Продолжение линии #4134 |
 | [#3800](https://github.com/cozystack/cozystack/pull/3800) | yankawai | feat(monitoring): add optional email receiver to alertmanager | Почтовый канал алертинга через Alertmanager рядом с Alerta, пароль SMTP монтируется из Secret. Реализовано наше предложение: список `alertnames` и настраиваемые `severities` | **Содержательно готов, остались история и CI.** 25.09 IvanHunters дал **LGTM**, сам пересмотрев своё же утреннее блокирующее ревью — «код не менялся, изменилась моя оценка»: оба блокера (документация `repeatInterval`, недостижимый маршрут для `Watchdog` в `alertnames`) сняты как не тянущие на блокеры, остались две однострочные правки описаний, не блокирующие. lexfrei 25.09: IPv6-блокер закрыт — прогнал 291 вход через валидацию чарта и `net/mail` на трёх версиях Go, чарт не принимает ничего лишнего; NOT LGTM «только за историю»: merge-коммит с feature-работой внутри прятал валидационные тесты от bisect и `git log -p`. **Вечером 25.09 ветка перебрана в один обычный коммит** поверх main с `Assisted-by: LLM`; 228+16 тестов. До этого 22–23.09 — три круга ревью (guard адресов, формы display name/domain literal, IPv6-литералы), каждый закрыт в тот же день. Ждёт запуска CI (`action_required`) и повторного взгляда lexfrei |
 | [#3799](https://github.com/cozystack/cozystack/pull/3799) | yankawai | fix(linstor): use severity warning instead of warn in prometheus rules | Семь алертов LINSTOR/DRBD с `severity: warn` Alerta отбрасывала с ошибкой 500, и они молча терялись. Заодно keda-алерт переведён с `severity: info` на `informational`, severity закреплены тестом-контрактом по helm-шаблонам | **Содержательно готов, остались история и CI.** lexfrei 25.09: фикс верен, мутационная проверка проходит — NOT LGTM «только из-за истории коммитов»: два промежуточных коммита ломали `make unit-tests` на bisect, а в двух телах осталась review-iteration формулировка, запрещённая contributing guide (репозиторий мержит merge-коммитами — всё это осталось бы в логе main). **Вечером 25.09 пять тестовых коммитов сквошнуты — в ветке три итоговых.** Прогонов CI на новой голове нет. Также висит запрос scooby87 от 17.09 — его блокер (трейлер `Assisted-By: GPT-5` вместо `Assisted-by: LLM`) исправлен ещё 17.09. Ждёт CI, повторного взгляда lexfrei и снятия запроса scooby87 |
 
@@ -85,6 +90,8 @@
 
 | Что держит | PR |
 |---|---|
+| первое ревью и запуск CI | #4675, #4724, #4725 |
+| draft — автор доделывает описание | #4682 |
 | CI на перебранной ветке и повторный взгляд lexfrei — код признан готовым, IvanHunters уже LGTM | #3800 |
 | CI на перебранной ветке, повторный взгляд lexfrei и снятие запроса scooby87 | #3799 |
 | неснятый запрос изменений и E2E | #3956 |
@@ -108,6 +115,7 @@
 | [#3022](https://github.com/cozystack/cozystack/issues/3022) | lexfrei | OpenSearch fails to start in tenant namespaces: privileged init-sysctl violates baseline PodSecurity | OPEN, но **по сути решён**: #4152 поднимает `vm.max_map_count` DaemonSet'ом, #2682 выключил `setVMMaxMapCount`. Автор #4026 предложил закрыть |
 | [#4073](https://github.com/cozystack/cozystack/issues/4073) | lexfrei | opensearch-operator: dnsBase stays cluster.local | **закрыт** 17.09 — фикс в #4185 |
 | [#3793](https://github.com/cozystack/cozystack/issues/3793) | IvanHunters | Deleting a tenant with a Kafka app hangs the namespace in Terminating (KafkaTopic strimzi.io/topic-operator finalizer) | **закрыт** 23.09 lexfrei — как мы и просили: fixed by #3938, плюс #4280 для кредов хука; бэкпорт в release-1.6 — #4421 |
+| [#4676](https://github.com/cozystack/cozystack/issues/4676) | yankawai | bug(dashboard): NATS free-form configuration fields have no editor in Form mode | OPEN с 01.10. Фикс — #4682 (пока draft), закроется его мержем |
 | [#4611](https://github.com/cozystack/cozystack/issues/4611) | yankawai | FoundationDB connection string is not visible to tenants in the dashboard | **закрыт 30.09** мержем #4612 — в день открытия. Хвост #4148: RBAC появился, но консоль не умела показывать ConfigMap |
 | [#1966](https://github.com/cozystack/cozystack/issues/1966) | lllamnyp | tcp-balancer: HAProxy 3.3 breaks due to frontend/backend name collision | **закрыт 25.09** мержем #4366 — спустя почти восемь месяцев. Провисел с 03.02 с `priority/important-soon` и успел получить `lifecycle/stale`; первый фикс #2321 застрял на авторе, довёл задачу #4366 |
 | [#4342](https://github.com/cozystack/cozystack/issues/4342) | ghostrider0470 | cozystack-api: spec defaults are applied when an Application is read but not when it is created, so its first update upgrades the Helm release | OPEN с 18.09, `triage/needs-triage`. Обобщение механизма из ревью #3936 до платформенного бага, с репродукцией на VMDisk: дефолты подставляются на чтении, `Update` начинается с чтения — первая запись любого рода запекает дефолты в `spec.values`, Flux делает незапрошенный upgrade, а смена дефолта чарта до тронутых приложений уже не доезжает. Ссылается на #3936 и #3956; для VMInstance такой upgrade ещё и виснет — его комментарий в issue #3734 называет причину: `lookup` kube-ovn IP в шаблоне vm.yaml |
