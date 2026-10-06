@@ -12,6 +12,8 @@
 - **#4724 — NOT LGTM, но по делу и уже исправлено**: lexfrei нашёл, что вебхук CloudNativePG сравнивает `shared_buffers` с memory **request**, а не limit — на платформах с `memory-allocation-ratio` выше 4 новый дефолт сделал бы Cluster неприемлемым на admission, и апгрейд каждой маленькой базы упал бы. yankawai в 12:56 запушил «cap shared_buffers at the memory request», бэкпорт #4725 обновлён в 12:57
 - **#4682 — код признан готовым**, блокер был один: шаблон PR требует скриншоты для UI-изменений. yankawai добавил их в 13:39. lexfrei отдельно отметил, что баг шире NATS: пустым fieldset рендерится любой free-form объект — десять `addons.*.valuesOverride` у Kubernetes, Kafka `topics[].config`, `talos.registryMirrors`, etcd `affinity`
 - **#3956: E2E «красный» не из-за PR**: lexfrei 05.10 ребейзнул ветку и переодобрил, но на новой голове упал unit-тест `internal/fluxcontract` про chainsaw-сьют monitoring — файлов PR он не касается; в main этот контракт починили в тот же день в 15:10. `[вывод]` Ещё один ребейз и прогон — и PR зелёный
+- **06.10 yankawai открыл #4766 — и lexfrei одобрил его в тот же день**: static-key auto-unseal для OpenBAO, продолжение застрявшего с 10.09 #4168 от txmazing с сохранением авторства. Код был признан верным ещё на #4168, правки были только текстовые. CI красный на сборке тестов пакета, который PR не трогает. Вокруг — эпик issue #2787 и платформенный draft #4177
+- **Взят в трекинг issue #3740** (lexfrei, `priority/important-soon`): cilium и kube-ovn берут адреса из одного pod CIDR, и под может получить уже занятый адрес. По дефолтам установки касается живых кластеров, фикса пока нет
 - **Без изменений**: бэкпорты #4614/#4609, отсутствие `kind/backport` на #3799, community#25, issue #3950, issue #3022. Нового стабильного релиза после v1.6.4 нет
 
 ## Требует действия
@@ -21,7 +23,8 @@
 | Что | Где | Кому и что делать |
 |---|---|---|
 | **Повторное ревью после правок и запуск CI** | #4724, #4725, #4682 | lexfrei: правки по его ревью от 05.10 запушены в тот же день — cap по memory request в #4724 и бэкпорте, скриншоты в #4682. На всех трёх головах CI в `action_required` |
-| **Ребейз и прогон** | #3956 | Мейнтейнер: оба апрува на месте; красный статус — упавший в main и уже починенный там контракт-тест `internal/fluxcontract`, не сам PR |
+| **Ребейз и прогон** | #3956, #4766 | Мейнтейнер: оба одобрены; красное в CI — тесты пакетов, которые PR не трогают: у #3956 контракт-тест `internal/fluxcontract`, уже починенный в main, у #4766 сборка тестов `internal/backupcontroller` |
+| **Закрыть заменённый** | #4168 | Мейнтейнер: после мержа #4766, который несёт работу txmazing с сохранённым авторством |
 | **Бэкпорты в release-1.6** | #4614, #4609, #3799, #4738, #4675 | Мейнтейнер: смержить ручной #4614 и закрыть конфликтный ботовский #4609; повесить `kind/backport` на #3799, а также на свежесмерженные #4738 и #4675 — ручных бэкпортов у них нет, дубля не будет |
 | **Ревью proposal** | community#25 | Любой мейнтейнер: второй драфт с 21.08 без единого ревью, наш отчёт о прогоне миграции с 03.09 без ответа |
 | **Закрыть issue** | issue #3022 | Мейнтейнер: по словам автора #4026 решён мержем #4152 и #2682 |
@@ -32,6 +35,7 @@
 
 | PR | Автор | Название | Что решает | Состояние |
 |---|---|---|---|---|
+| [#4766](https://github.com/cozystack/cozystack/pull/4766) | yankawai | feat(openbao): optional static-key auto-unseal and apiserver egress label | Тенантный OpenBAO поднимается запечатанным и после каждого рестарта ждёт ручного `bao operator unseal`, а HA-поды зависают на старте без egress к apiserver. PR добавляет opt-in `seal.type: static` (ключ в Secret, который создаёт администратор кластера; чарт ключ не генерирует), защиту от молчаливой смены seal, лейбл `allow-to-apiserver` и ограничения на значения: `keyId` уходит в `tpl` внутри helm-controller с правами cluster-admin. Продолжение застрявшего #4168: первый коммит — его работа, автор txmazing | **APPROVED** — lexfrei 06.10 15:07, после своего же NOT LGTM в 13:21, закрытого за полтора часа. CI прогнался: `pre-commit` зелёный, workflow «Pull Request» красный на сборке тестов `internal/backupcontroller` — пакета, который PR не трогает. `[вывод]` Рассинхрон в main вокруг бэкап-PR, нужен ребейз и прогон. Закроет issue #2483 и issue #2793 |
 | [#4724](https://github.com/cozystack/cozystack/pull/4724) | yankawai | fix(postgres): cap the default shared_buffers at a quarter of the memory limit | Чарт не задаёт `shared_buffers`, и CNPG не задаёт — PostgreSQL стартует со встроенными 128MB: на `t1.nano` это весь лимит памяти, на дефолтном `t1.micro` — половина. Дамп, большой скан или догоняющая реплика заполняют пул — инстанс получает OOMKill. Ниже лимита 512Mi чарт ставит четверть лимита, но не больше memory request; явный `shared_buffers` побеждает | **CHANGES_REQUESTED** — lexfrei 05.10: вебхук CloudNativePG (`validateResources` в v1.30.0) отвергает Cluster, если `shared_buffers` больше memory **request**, а request — это limit, делённый на `memory-allocation-ratio`; при ratio выше 4 на маленьких пресетах четверть лимита больше request, и апгрейд каждой маленькой базы упал бы на admission. **Исправлено в тот же день** коммитом «cap shared_buffers at the memory request»; бэкпорт #4725 обновлён синхронно. Ждёт повторного ревью и запуска CI (`action_required` на обоих) |
 | [#4682](https://github.com/cozystack/cozystack/pull/4682) | yankawai | fix(dashboard): allow editing free-form objects in application forms | В Form-режиме консоли у free-form полей нет редактора — они рендерятся пустым fieldset. По словам lexfrei, это не только NATS `config.merge`: то же с десятью `addons.*.valuesOverride` у Kubernetes, Kafka `topics[].config`, `talos.registryMirrors`, etcd `affinity`. PR добавляет JSON-редактор с сохранением типов и блокировкой submit при невалидном вводе. `Fixes issue #4676` | **CHANGES_REQUESTED** — lexfrei 05.10: «код готов к мержу», единственный блокер — скриншоты, обязательные по шаблону для UI-изменений; он прогнал 463 теста консоли и мутационно проверил новые. Вышел из draft 04.10; **скриншоты добавлены 05.10**. После этого в ветку влит main merge-коммитом — `[вывод]` на #3800 lexfrei блокировал именно merge-коммит в истории, может попросить ребейз; CodeRabbit оставил minor про валидацию перед переключением в YAML. Ждёт повторного ревью и запуска CI (`action_required`, включая UI Test) |
 
@@ -40,6 +44,7 @@
 | PR | Автор | Название | Что решает | Состояние |
 |---|---|---|---|---|
 | [#3956](https://github.com/cozystack/cozystack/pull/3956) | myasnikovdaniil | fix(api): repair an empty required field instead of failing the release | Пустое обязательное поле в спеке роняло установку всего релиза | **APPROVED** — IvanHunters 30.09, lexfrei переодобрил 05.10 после ребейза («to pick up the bucket suite fix that made the last E2E run red»). На новой голове упал unit-тест `TestChainsawSuitesReadHistoryThroughTheSharedName` в `internal/fluxcontract`: он проверяет `hack/e2e-chainsaw/monitoring/chainsaw-test.yaml`, которого PR не касается, а в main этот контракт починен 05.10 в 15:10 — `[вывод]` нужен ещё один ребейз и прогон. Важен как шов на write-пути для create-time дефолтинга из issue #3950 |
+| [#4168](https://github.com/cozystack/cozystack/pull/4168) | txmazing | feat(openbao): optional static-key auto-unseal and apiserver egress label | Первая версия static-key auto-unseal и egress-лейбла для OpenBAO | **Заменён #4766.** lexfrei 30.09: «NOT LGTM, but only for text», код признан верным. Автор не отвечал с 10.09, yankawai 06.10 перенёс работу в #4766 с сохранением авторства и sign-off и оставил в #4168 комментарий. Кандидат на закрытие после мержа #4766 |
 
 ## Живая миграция VM — вся связка в main
 
@@ -86,6 +91,8 @@
 |---|---|
 | повторное ревью lexfrei и запуск CI после правок от 05.10 | #4724, #4725, #4682 |
 | ещё один ребейз и прогон — красный от уже починенного в main контракт-теста | #3956 |
+| ребейз и прогон — красная сборка тестов `internal/backupcontroller`, не связанная с PR | #4766 |
+| ничего — заменён #4766, закрыть после его мержа | #4168 |
 
 ## Связь PR и issue
 
@@ -97,6 +104,8 @@
 | [#4084](https://github.com/cozystack/cozystack/issues/4084) | nats: config.merge.accounts duplicates the generated accounts key and breaks the install | #4134 | **закрыт** мержем 18.09 |
 | [#4085](https://github.com/cozystack/cozystack/issues/4085) | harbor/clickhouse: cleanup hook Role lacks watch on persistentvolumeclaims | #4135 | **закрыт** мержем 18.09 |
 | [#4086](https://github.com/cozystack/cozystack/issues/4086) | opensearch: data PVCs are left behind after the application is removed | #4136 | **закрыт** мержем 18.09 |
+| [#2483](https://github.com/cozystack/cozystack/issues/2483) | OpenBAO: can't init/unseal without kubectl exec | #4766 | открыт — закроется мержем |
+| [#2793](https://github.com/cozystack/cozystack/issues/2793) | OpenBAO HA (raft) pods hang at startup due to hardcoded service_registration "kubernetes" | #4766 | открыт — закроется мержем |
 
 ## Issues
 
@@ -109,6 +118,8 @@
 | [#4676](https://github.com/cozystack/cozystack/issues/4676) | yankawai | bug(dashboard): NATS free-form configuration fields have no editor in Form mode | OPEN с 01.10. Фикс — #4682: код признан готовым 05.10, ждёт повторного ревью после добавленных скриншотов. По ревью lexfrei, баг шире NATS — касается всех free-form объектов в формах |
 | [#4611](https://github.com/cozystack/cozystack/issues/4611) | yankawai | FoundationDB connection string is not visible to tenants in the dashboard | **закрыт 30.09** мержем #4612 — в день открытия. Хвост #4148: RBAC появился, но консоль не умела показывать ConfigMap |
 | [#1966](https://github.com/cozystack/cozystack/issues/1966) | lllamnyp | tcp-balancer: HAProxy 3.3 breaks due to frontend/backend name collision | **закрыт 25.09** мержем #4366 — спустя почти восемь месяцев. Провисел с 03.02 с `priority/important-soon` и успел получить `lifecycle/stale`; первый фикс #2321 застрял на авторе, довёл задачу #4366 |
+| [#2787](https://github.com/cozystack/cozystack/issues/2787) | myasnikovdaniil | Make managed OpenBAO production-mature: auto-unseal, TLS, init/bootstrap, guardrails | OPEN с 02.06, эпик: `security`, `triage/accepted`, `priority/important-longterm`. Тенантные инстансы стартуют запечатанными и неинициализированными, TLS выключен везде — включая репликацию Raft, системный OpenBAO — заглушка. Две линии работы: простой static-key auto-unseal — #4766 (одобрен, продолжение #4168), и платформенный путь — draft #4177 от myasnikovdaniil: центральный OpenBAO с transit-ключом на тенанта, фазы 1–2 эпика, тенантной половины пока нет, без ревью с 09.09. Единственный комментарий в эпике — «This need design doc first» (09.06) |
+| [#3740](https://github.com/cozystack/cozystack/issues/3740) | lexfrei | networking: cilium takes its per-node infrastructure IPs from the pod CIDR kube-ovn allocates pods from | OPEN с 10.08, 23.09 — `triage/accepted`, `priority/important-soon`. Kube-OVN выдаёт адреса подам из всего `networking.podCIDR`, а cilium берёт два адреса на ноду (router IP и Ingress IP) из `Node.spec.podCIDR` — по дефолтам это один диапазон. Рано или поздно под получает адрес, который уже держит cilium: тихо ломается трафик или под висит `ContainerCreating` с `putEndpointIdInvalid`. Оба документированных пути установки дают пересечение: в talm `podSubnets` совпадает с дефолтом платформы `10.244.0.0/16`, в k3s-роли оба — `10.42.0.0/16`. 26.09 воспроизведено на свежей установке. В CI обойдено #3750 только для песочницы, фикса дефолтов нет. Касается живых кластеров |
 | [#4342](https://github.com/cozystack/cozystack/issues/4342) | ghostrider0470 | cozystack-api: spec defaults are applied when an Application is read but not when it is created, so its first update upgrades the Helm release | OPEN с 18.09, `triage/needs-triage`. Обобщение механизма из ревью #3936 до платформенного бага, с репродукцией на VMDisk: дефолты подставляются на чтении, `Update` начинается с чтения — первая запись любого рода запекает дефолты в `spec.values`, Flux делает незапрошенный upgrade, а смена дефолта чарта до тронутых приложений уже не доезжает. Ссылается на #3936 и #3956; для VMInstance такой upgrade ещё и виснет — его комментарий в issue #3734 называет причину: `lookup` kube-ovn IP в шаблоне vm.yaml |
 
 ## LINSTOR
