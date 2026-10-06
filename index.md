@@ -1,28 +1,28 @@
 # Отслеживание PR в cozystack
 
-Обновлено: **2026-10-05**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
+Обновлено: **2026-10-06**. Репозиторий по умолчанию — `cozystack/cozystack`, иначе указано явно.
 
 На GitHub у issue и PR **общая нумерация**, по номеру их не отличить. Поэтому здесь issue всегда помечены словом — `issue #4083`, а голый `#4133` означает PR.
 
-## Главное за 30.09–05.10
+## Главное за 05–06.10
 
-- **#3800 и #3799 смержены 30.09** lexfrei с зелёным E2E: #3800 в 13:51, #3799 в 18:44. Утром оба получили апрувы lexfrei, scooby87 снял свой запрос на #3799 апрувом в 18:33 — за 11 минут до мержа. **Весь сентябрьский бэклог наших PR — в main.** В трекинг это попало только 04.10 — проверка утром 30.09 прошла до мержей
-- **У #3800 два открытых бэкпорта в release-1.6, и это не дубль**: на #3800 висел лейбл `kind/backport`, и через 29 секунд после мержа workflow «Automatic Backport» создал #4609 — но черри-пик конфликтнул в `monitoring-rd/cozyrds/monitoring.yaml`, и по настройке `draft_commit_conflicts` бот открыл PR с закоммиченными маркерами конфликта. yankawai в 15:08 открыл чистый ручной #4614. Мержить надо #4614, конфликтный #4609 — закрыть. У #3799 backport-лейбла нет — автобэкпорт не создавался
-- **30.09 вечером смержены ещё #4610 и #4612**: GC-финализация Application (апрув lexfrei через 50 минут после открытия) и вкладка ConfigMaps в консоли — строка подключения FoundationDB теперь видна тенанту в дашборде. Оба закрыли свои issue в день открытия
-- **03.10 yankawai открыл #4738** — миграция 50 при апгрейде на 1.6.4 ломала тенантные etcd: легаси-оператор возвращался после adoption и в гонке с чартами оставлял поды без DNS пиров. Воспроизведено на проде стороннего пользователя (апгрейд 1.4.3 → 1.6.4, все пять тенантов с etcd); наши кластеры уже на 1.6.4 — остаётся разовая проверка последствий
-- **#3956 полностью одобрен — месячный запрос снят**: 30.09 IvanHunters одобрил сам (12:45), lexfrei переодобрил (18:47). Единственный блокер — красный E2E от прогона 10.09, нужен свежий запуск. Зафиксировано 05.10 — ещё одно событие дня больших мержей. 04.10 на новых PR появились лейблы областей — `[вывод]` прошёл триаж, но ревью и CI всё ещё нет
-- **01–02.10 yankawai открыл четыре новых PR**: #4675 (NATS: JetStream для сгенерированного аккаунта), #4682 (draft — JSON-редактор free-form полей в формах дашборда, `Fixes issue #4676`), #4724 (PostgreSQL: дефолтные 128MB `shared_buffers` не влезают в маленькие пресеты — OOMKill при дампе) и #4725 — бэкпорт #4724 в release-1.6, поданный сразу. Ни на одном пока нет ни ревью, ни запуска CI
-- **Открытых наших осталось три**: #4724 (+#4725), #4682 (draft), #4675. Из старого скоупа живы только чужой #3956 и community#25 (без движения с 03.09)
+- **05.10 lexfrei прошёл по всем нашим открытым PR за одно утро** (11:41–11:44): два одобрил и в тот же день смержил, на два других запросил правки — и yankawai закрыл обе в тот же день
+- **#4738 смержен 05.10** (апрув 11:44, мерж 14:53, E2E зелёный): легаси etcd-оператор больше не возвращается после adoption в миграции 50. Backport-лейбла нет — в release-1.6 сам не поедет
+- **#4675 смержен 05.10** (апрув 11:41, мерж 15:00, E2E зелёный): JetStream включается для сгенерированного аккаунта NATS. Backport-лейбла тоже нет
+- **#4724 — NOT LGTM, но по делу и уже исправлено**: lexfrei нашёл, что вебхук CloudNativePG сравнивает `shared_buffers` с memory **request**, а не limit — на платформах с `memory-allocation-ratio` выше 4 новый дефолт сделал бы Cluster неприемлемым на admission, и апгрейд каждой маленькой базы упал бы. yankawai в 12:56 запушил «cap shared_buffers at the memory request», бэкпорт #4725 обновлён в 12:57
+- **#4682 — код признан готовым**, блокер был один: шаблон PR требует скриншоты для UI-изменений. yankawai добавил их в 13:39. lexfrei отдельно отметил, что баг шире NATS: пустым fieldset рендерится любой free-form объект — десять `addons.*.valuesOverride` у Kubernetes, Kafka `topics[].config`, `talos.registryMirrors`, etcd `affinity`
+- **#3956: E2E «красный» не из-за PR**: lexfrei 05.10 ребейзнул ветку и переодобрил, но на новой голове упал unit-тест `internal/fluxcontract` про chainsaw-сьют monitoring — файлов PR он не касается; в main этот контракт починили в тот же день в 15:10. `[вывод]` Ещё один ребейз и прогон — и PR зелёный
+- **Без изменений**: бэкпорты #4614/#4609, отсутствие `kind/backport` на #3799, community#25, issue #3950, issue #3022. Нового стабильного релиза после v1.6.4 нет
 
 ## Требует действия
 
-Почти всё в таблице — действия мейнтейнеров; на нашей стороне только #4682, который автор пока держит в draft.
+Всё в таблице — действия мейнтейнеров; на нашей стороне только мелочь по #4682 (см. строку PR).
 
 | Что | Где | Кому и что делать |
 |---|---|---|
-| **Первое ревью и запуск CI** | #4738, #4675, #4724, #4725 | Мейнтейнер: PR от 01–03.10 без единого ревью, обязательные проверки не запускались. #4738 — приоритетный: чинит поломку тенантных etcd при апгрейде на 1.6.4 |
-| **Бэкпорты #3800 и #3799 в release-1.6** | #4614, #4609, #3799 | Мейнтейнер: смержить чистый ручной #4614 и закрыть конфликтный ботовский #4609; решить, нужен ли в release-1.6 фикс алертов #3799 — если да, достаточно повесить на него `kind/backport`, бот создаст PR сам |
-| **Перезапустить E2E и смержить** | #3956 | Мейнтейнер: оба апрува на месте — IvanHunters снял свой запрос одобрением 30.09, lexfrei переодобрил; единственный блокер — красный E2E от прогона 10.09 |
+| **Повторное ревью после правок и запуск CI** | #4724, #4725, #4682 | lexfrei: правки по его ревью от 05.10 запушены в тот же день — cap по memory request в #4724 и бэкпорте, скриншоты в #4682. На всех трёх головах CI в `action_required` |
+| **Ребейз и прогон** | #3956 | Мейнтейнер: оба апрува на месте; красный статус — упавший в main и уже починенный там контракт-тест `internal/fluxcontract`, не сам PR |
+| **Бэкпорты в release-1.6** | #4614, #4609, #3799, #4738, #4675 | Мейнтейнер: смержить ручной #4614 и закрыть конфликтный ботовский #4609; повесить `kind/backport` на #3799, а также на свежесмерженные #4738 и #4675 — ручных бэкпортов у них нет, дубля не будет |
 | **Ревью proposal** | community#25 | Любой мейнтейнер: второй драфт с 21.08 без единого ревью, наш отчёт о прогоне миграции с 03.09 без ответа |
 | **Закрыть issue** | issue #3022 | Мейнтейнер: по словам автора #4026 решён мержем #4152 и #2682 |
 
@@ -32,16 +32,14 @@
 
 | PR | Автор | Название | Что решает | Состояние |
 |---|---|---|---|---|
-| [#4738](https://github.com/cozystack/cozystack/pull/4738) | yankawai | fix(platform): keep the legacy etcd-operator stopped after etcd adoption | Миграция 50 (adoption тенантных etcd на v1alpha2) после успешного усыновления возвращала **легаси**-оператор к жизни — тот наперегонки со старым чартом пересоздавал легаси EtcdCluster, новый чарт его прунил, и GC уносил `etcd-headless`. Итог на проде при апгрейде 1.4.3 → 1.6.4: у всех пяти тенантов с etcd поды пережили, но DNS-имена пиров перестали резолвиться (`no such host`), defrag-CronJob падал ежечасно. Фикс: после успешного adoption оператор остаётся в 0 | **Открыт 03.10**, ревью нет, CI не запускался. Наши кластеры уже на 1.6.4 — как предохранитель для нас неактуален, но стоит проверить, не оставил ли баг тихую поломку при прошедшем апгрейде; для пользователей, идущих с 1.4/1.5, фикс критичен. Родственник темы community#25 |
-| [#4724](https://github.com/cozystack/cozystack/pull/4724) | yankawai | fix(postgres): cap the default shared_buffers at a quarter of the memory limit | Чарт не задаёт `shared_buffers`, и CNPG не задаёт — PostgreSQL стартует со встроенными 128MB: на `t1.nano` это весь лимит памяти, на дефолтном `t1.micro` — половина. Дамп, большой скан или догоняющая реплика заполняют пул — инстанс получает OOMKill; наблюдали на кластере 1.6 с трёхинстансной базой на `t1.nano`. Ниже лимита 512Mi чарт теперь ставит четверть лимита (минимум 16MB), от 512Mi ничего не рендерится, явный `shared_buffers` в `postgresql.parameters` побеждает | **Открыт 02.10**, ревью нет, CI не запускался. **Бэкпорт в release-1.6 подан сразу — #4725**, cherry-pick без изменений, тоже ждёт ревью |
-| [#4682](https://github.com/cozystack/cozystack/pull/4682) | yankawai | fix(dashboard): allow editing free-form objects in application forms | В Form-режиме консоли у free-form полей вроде NATS `config.merge` и `config.resolver` нет редактора. PR добавляет JSON-редактор: вложенные объекты и массивы сохраняются, невалидный ввод остаётся видимым, схемная валидация блокирует create/update; типизированные map-поля сохраняют свой key/value-редактор. `Fixes issue #4676` | **Draft** — в описании ещё не приложены скриншоты. По словам автора: 26 новых тестов и все 457 тестов консоли зелёные, TypeScript и Vite-сборка проходят. Ревью нет, CI не запускался |
-| [#4675](https://github.com/cozystack/cozystack/pull/4675) | yankawai | fix(nats): enable JetStream for the generated account | При заданных `users` и `jetstream.enabled: true` серверный JetStream включён, а сгенерированный аккаунт `A` — нет: аутентификация и обычный messaging работают, но `$JS.API.INFO` возвращает 10039 «JetStream not enabled for account». Теперь аккаунт получает JetStream, когда он включён и нет явной настройки на уровне аккаунта; лимиты тенанта, явное выключение и merge-поведение сохраняются | **Открыт 01.10**, ревью нет, CI не запускался. Продолжение линии #4134 |
+| [#4724](https://github.com/cozystack/cozystack/pull/4724) | yankawai | fix(postgres): cap the default shared_buffers at a quarter of the memory limit | Чарт не задаёт `shared_buffers`, и CNPG не задаёт — PostgreSQL стартует со встроенными 128MB: на `t1.nano` это весь лимит памяти, на дефолтном `t1.micro` — половина. Дамп, большой скан или догоняющая реплика заполняют пул — инстанс получает OOMKill. Ниже лимита 512Mi чарт ставит четверть лимита, но не больше memory request; явный `shared_buffers` побеждает | **CHANGES_REQUESTED** — lexfrei 05.10: вебхук CloudNativePG (`validateResources` в v1.30.0) отвергает Cluster, если `shared_buffers` больше memory **request**, а request — это limit, делённый на `memory-allocation-ratio`; при ratio выше 4 на маленьких пресетах четверть лимита больше request, и апгрейд каждой маленькой базы упал бы на admission. **Исправлено в тот же день** коммитом «cap shared_buffers at the memory request»; бэкпорт #4725 обновлён синхронно. Ждёт повторного ревью и запуска CI (`action_required` на обоих) |
+| [#4682](https://github.com/cozystack/cozystack/pull/4682) | yankawai | fix(dashboard): allow editing free-form objects in application forms | В Form-режиме консоли у free-form полей нет редактора — они рендерятся пустым fieldset. По словам lexfrei, это не только NATS `config.merge`: то же с десятью `addons.*.valuesOverride` у Kubernetes, Kafka `topics[].config`, `talos.registryMirrors`, etcd `affinity`. PR добавляет JSON-редактор с сохранением типов и блокировкой submit при невалидном вводе. `Fixes issue #4676` | **CHANGES_REQUESTED** — lexfrei 05.10: «код готов к мержу», единственный блокер — скриншоты, обязательные по шаблону для UI-изменений; он прогнал 463 теста консоли и мутационно проверил новые. Вышел из draft 04.10; **скриншоты добавлены 05.10**. После этого в ветку влит main merge-коммитом — `[вывод]` на #3800 lexfrei блокировал именно merge-коммит в истории, может попросить ребейз; CodeRabbit оставил minor про валидацию перед переключением в YAML. Ждёт повторного ревью и запуска CI (`action_required`, включая UI Test) |
 
 ## Чужие PR — открытые
 
 | PR | Автор | Название | Что решает | Состояние |
 |---|---|---|---|---|
-| [#3956](https://github.com/cozystack/cozystack/pull/3956) | myasnikovdaniil | fix(api): repair an empty required field instead of failing the release | Пустое обязательное поле в спеке роняло установку всего релиза | **APPROVED** — 30.09 IvanHunters сам снял свой запрос от 01.09 одобрением, lexfrei переодобрил в тот же вечер. Единственный блокер — красный E2E от прогона 10.09, нужен свежий запуск. Важен как шов на write-пути для create-time дефолтинга из issue #3950 |
+| [#3956](https://github.com/cozystack/cozystack/pull/3956) | myasnikovdaniil | fix(api): repair an empty required field instead of failing the release | Пустое обязательное поле в спеке роняло установку всего релиза | **APPROVED** — IvanHunters 30.09, lexfrei переодобрил 05.10 после ребейза («to pick up the bucket suite fix that made the last E2E run red»). На новой голове упал unit-тест `TestChainsawSuitesReadHistoryThroughTheSharedName` в `internal/fluxcontract`: он проверяет `hack/e2e-chainsaw/monitoring/chainsaw-test.yaml`, которого PR не касается, а в main этот контракт починен 05.10 в 15:10 — `[вывод]` нужен ещё один ребейз и прогон. Важен как шов на write-пути для create-time дефолтинга из issue #3950 |
 
 ## Живая миграция VM — вся связка в main
 
@@ -65,7 +63,7 @@
 
 `[вывод]` И массовое падение backup-roundtrip, и державшееся дольше падение opensearch были нестабильностью тестового стенда, а не регрессиями PR: одни и те же коммиты падали и проходили без изменений кода.
 
-Красный E2E остался только у #3956 (прогон от 10.09). Из двух issue про backup round-trip issue #4262 закрыт 23.09 lexfrei, issue #4258 открыт.
+Красный статус остался только у #3956 — и тот от контракт-теста, сломанного и в тот же день починенного в main 05.10. Из двух issue про backup round-trip issue #4262 закрыт 23.09 lexfrei, issue #4258 открыт.
 
 ### Зоны CODEOWNERS
 
@@ -86,9 +84,8 @@
 
 | Что держит | PR |
 |---|---|
-| первое ревью и запуск CI | #4738, #4675, #4724, #4725 |
-| draft — автор доделывает описание | #4682 |
-| только свежий прогон E2E — оба апрува на месте | #3956 |
+| повторное ревью lexfrei и запуск CI после правок от 05.10 | #4724, #4725, #4682 |
+| ещё один ребейз и прогон — красный от уже починенного в main контракт-теста | #3956 |
 
 ## Связь PR и issue
 
@@ -109,7 +106,7 @@
 | [#3022](https://github.com/cozystack/cozystack/issues/3022) | lexfrei | OpenSearch fails to start in tenant namespaces: privileged init-sysctl violates baseline PodSecurity | OPEN, но **по сути решён**: #4152 поднимает `vm.max_map_count` DaemonSet'ом, #2682 выключил `setVMMaxMapCount`. Автор #4026 предложил закрыть |
 | [#4073](https://github.com/cozystack/cozystack/issues/4073) | lexfrei | opensearch-operator: dnsBase stays cluster.local | **закрыт** 17.09 — фикс в #4185 |
 | [#3793](https://github.com/cozystack/cozystack/issues/3793) | IvanHunters | Deleting a tenant with a Kafka app hangs the namespace in Terminating (KafkaTopic strimzi.io/topic-operator finalizer) | **закрыт** 23.09 lexfrei — как мы и просили: fixed by #3938, плюс #4280 для кредов хука; бэкпорт в release-1.6 — #4421 |
-| [#4676](https://github.com/cozystack/cozystack/issues/4676) | yankawai | bug(dashboard): NATS free-form configuration fields have no editor in Form mode | OPEN с 01.10. Фикс — #4682 (пока draft), закроется его мержем |
+| [#4676](https://github.com/cozystack/cozystack/issues/4676) | yankawai | bug(dashboard): NATS free-form configuration fields have no editor in Form mode | OPEN с 01.10. Фикс — #4682: код признан готовым 05.10, ждёт повторного ревью после добавленных скриншотов. По ревью lexfrei, баг шире NATS — касается всех free-form объектов в формах |
 | [#4611](https://github.com/cozystack/cozystack/issues/4611) | yankawai | FoundationDB connection string is not visible to tenants in the dashboard | **закрыт 30.09** мержем #4612 — в день открытия. Хвост #4148: RBAC появился, но консоль не умела показывать ConfigMap |
 | [#1966](https://github.com/cozystack/cozystack/issues/1966) | lllamnyp | tcp-balancer: HAProxy 3.3 breaks due to frontend/backend name collision | **закрыт 25.09** мержем #4366 — спустя почти восемь месяцев. Провисел с 03.02 с `priority/important-soon` и успел получить `lifecycle/stale`; первый фикс #2321 застрял на авторе, довёл задачу #4366 |
 | [#4342](https://github.com/cozystack/cozystack/issues/4342) | ghostrider0470 | cozystack-api: spec defaults are applied when an Application is read but not when it is created, so its first update upgrades the Helm release | OPEN с 18.09, `triage/needs-triage`. Обобщение механизма из ревью #3936 до платформенного бага, с репродукцией на VMDisk: дефолты подставляются на чтении, `Update` начинается с чтения — первая запись любого рода запекает дефолты в `spec.values`, Flux делает незапрошенный upgrade, а смена дефолта чарта до тронутых приложений уже не доезжает. Ссылается на #3936 и #3956; для VMInstance такой upgrade ещё и виснет — его комментарий в issue #3734 называет причину: `lookup` kube-ovn IP в шаблоне vm.yaml |
@@ -181,6 +178,8 @@ PR из отслеживаемого скоупа, которые уже в `mai
 
 | PR | Автор | Что решил | Смержен | Релиз |
 |---|---|---|---|---|
+| [#4675](https://github.com/cozystack/cozystack/pull/4675) | yankawai | nats: JetStream включается для сгенерированного аккаунта `A`, когда он включён на сервере и нет явной настройки — `$JS.API.INFO` больше не отвечает ошибкой 10039 | 05.10 | пока только main — backport-лейбла нет |
+| [#4738](https://github.com/cozystack/cozystack/pull/4738) | yankawai | platform: миграция 50 оставляет легаси etcd-оператор в нуле после adoption — тенантные etcd больше не теряют DNS пиров при апгрейде на 1.6.x. Найдено на проде при апгрейде 1.4.3 → 1.6.4 | 05.10 | пока только main — backport-лейбла нет |
 | [#3800](https://github.com/cozystack/cozystack/pull/3800) | yankawai | monitoring: почтовый канал алертинга через Alertmanager рядом с Alerta — реализовано наше предложение (`alertnames`, настраиваемые `severities`); пароль SMTP только из константного Secret, адреса и `smarthost` валидируются строже `net/mail`. Пять кругов ревью 18–30.09 | 30.09 | бэкпорт в release-1.6 в пути: ботовский #4609 конфликтнул (draft с маркерами), чистый ручной #4614 ждёт ревью |
 | [#4612](https://github.com/cozystack/cozystack/pull/4612) | yankawai | dashboard + foundationdb: в консоли у приложения появилась вкладка ConfigMaps — строка подключения FoundationDB теперь видна тенанту в дашборде. #4148 дал RBAC на ConfigMap, но у консоли не было представления для него; вкладка generic, но resource map пока только у foundationdb. Закрыл issue #4611 в день открытия | 30.09 | пока только main |
 | [#4610](https://github.com/cozystack/cozystack/pull/4610) | yankawai | cozystack-api: сборщик мусора может финализировать Application — удаление с `--cascade=foreground` или orphan-пропагацией больше не зависает навсегда. Application теперь отдаёт `foregroundDeletion`/`orphan` в `metadata.finalizers` и проносит их изменения до HelmRelease; у пары общий UID, и GC финализировал узел через Application-эндпоинт, который finalizers не показывал. Найдено на v1.6.4 с Bucket и OpenBAO | 30.09 | пока только main |
