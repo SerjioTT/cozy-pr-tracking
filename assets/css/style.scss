@@ -1,0 +1,79 @@
+---
+---
+
+@import "jekyll-theme-primer";
+
+// Тёмная схема в палитре GitHub dark. Тема jekyll-theme-primer 0.6.0 собрана на
+// старых модулях primer-* без цветовых режимов, поэтому переопределяем цвета руками.
+// Чтобы вместо «всегда тёмной» схема следовала за системой, оберните всё ниже
+// в @media (prefers-color-scheme: dark) { ... }.
+
+$dark-bg: #0d1117;
+$dark-bg-2: #161b22;
+$dark-bg-3: #21262d;
+$dark-fg: #c9d1d9;
+$dark-fg-muted: #8b949e;
+$dark-border: #30363d;
+$dark-link: #58a6ff;
+$dark-code: #f0f6fc;
+
+html {
+  color-scheme: dark;
+  background-color: $dark-bg;
+}
+
+body {
+  background-color: $dark-bg;
+  color: $dark-fg;
+}
+
+.markdown-body {
+  color: $dark-fg;
+
+  a { color: $dark-link; }
+
+  h1, h2, h3, h4, h5, h6 { color: $dark-code; }
+  h1, h2 { border-bottom-color: $dark-bg-3; }
+
+  hr { background-color: $dark-bg-3; border-color: $dark-bg-3; }
+
+  blockquote { color: $dark-fg-muted; border-left-color: $dark-bg-3; }
+
+  code, tt {
+    color: $dark-code;
+    background-color: rgba(110, 118, 129, 0.4);
+  }
+
+  pre, .highlight pre, .highlight {
+    color: $dark-fg;
+    background-color: $dark-bg-2;
+  }
+  pre code { background-color: transparent; }
+
+  table {
+    tr { background-color: $dark-bg; border-top-color: $dark-bg-3; }
+    tr:nth-child(2n) { background-color: $dark-bg-2; }
+    th, td { border-color: $dark-border; }
+  }
+
+  img { background-color: transparent; }
+
+  kbd {
+    color: $dark-fg;
+    background-color: $dark-bg-2;
+    border-color: $dark-border;
+    box-shadow: inset 0 -1px 0 $dark-border;
+  }
+}
+
+.footer, .text-gray { color: $dark-fg-muted !important; }
+.border-gray-light, .border-top { border-color: $dark-border !important; }
+
+// Подсветка кода (rouge) — пара базовых токенов, остальное читаемо и так.
+.highlight {
+  .c, .c1, .cm { color: $dark-fg-muted; }
+  .k, .kd { color: #ff7b72; }
+  .s, .s1, .s2 { color: #a5d6ff; }
+  .nt, .nf { color: #7ee787; }
+  .m, .mi { color: #79c0ff; }
+}
